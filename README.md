@@ -1,5 +1,8 @@
 # nxnative
 
+> [!TIP]
+> **The Legend of Zelda: Ocarina of Time (Switch 2) macOS Fixes**: See the complete [Zelda OoT macOS Guide & AI Replication Prompt](docs/ZELDA_OOT_MACOS_GUIDE.md) for full instructions, automated patch scripts, and fixes for mesh pipeline crashes, shader prewarming, Retina scaling, and cutscene audio/video sync.
+
 Play your own Nintendo Switch and Switch 2 games natively on Apple silicon Macs, iPhone and iPad. One script packs your game into a Mac app or an unsigned IPA that you sideload.
 
 It is not an emulator: the game's own code runs directly on the Apple chip, with Switch graphics rebuilt on Metal. Nothing from any game is in this repository, and the project is not affiliated with Nintendo or any game publisher.

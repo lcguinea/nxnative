@@ -2,6 +2,19 @@
 # MATCH_FRAME_STEP as described there ("Registered patches"). Patches of Nintendo SDK module builds are in dm/tools/sdk_patches.py
 from nso_asm import ADRP, B
 
+CUTS = {
+    # The Legend of Zelda: Ocarina of Time (Switch 2, v131072) main:
+    # The movie player configuration hardcodes w8 = 1 at 0x3b5c55c into [sp, #0x38], passed to constructor 0x3b5cec0,
+    # which sets [x19, #0x20] = 1 (max pictures to advance per tick) and [x19, #0x50] = 2 (image pool frame count).
+    # At 30 fps (hold 2 vsyncs), the accumulator tries to advance 2 pictures per frame (floor(2.0 / 1.0) = 2), but is
+    # clamped to [x0, #0x20] = 1. The 60 fps AV1 video plays at half speed while audren audio and dialog timelines
+    # run at real time, causing massive desynchronization. Passing w9 (4) instead of w8 (1) at 0x3b5c55c sets
+    # [x19, #0x20] = 2 and [x19, #0x50] = 4, allowing advance(player, 2) and keeping audio, video and dialog in sync.
+    'e0f3ccfaf50065ae4ea01eb5aeb13b1a': [
+        (0x3b5c55c, 'e83b00b9', 'e93b00b9', 'movie player buffer count: pass w9 (4) instead of w8 (1) to enable multi-picture advance at 30 fps'),
+    ],
+}
+
 # The game's frame ratio. Once a frame the function at main+0x6e6be0 (v131072) divides its base rate (60.0, or 30.0 while bit 0 of [x21+0x24f] is set) by the int frame rate at
 # [x21+0x2c8] (fdiv s8,s1,s0 at +0xe4) and hands the result to the time object (main+0x3b4e300: ratio at +0x10, 1 / ratio at +0x14, round(60 / ratio) at +0x1c), which the game
 # steps by; the frame's own time never enters it, so a frame that takes two vsyncs at rate 60 plays at half speed. The stub gives the ratio the host's step instead: step × base / 60
@@ -133,4 +146,7 @@ BINDING = [
     {'what': 'dynamic resolution: full size, or a climb on the load measured at each level', 'now': 'game', 'goal': 'game', 'purpose': 'rendering',
      'why': "the game's own dynamic-resolution level function and update, found by their functions' fingerprints on any build that keeps both; switchable (DM_DYNAMIC_RESOLUTION)",
      'checked': 'v131072 main: one function with each fingerprint (the level function a leaf, x2..x11 / x16 / x17 / s0..s2 free), its callers, the update and the controller fields read by disassembly, the fields read in play (2026-11-08); the climb run natively against a model of the update and in play to full size (2026-11-09)'},
+    {'what': 'movie player buffer count for multi-picture advance', 'now': 'build', 'goal': 'game', 'purpose': 'frame rate',
+     'why': "the movie player's buffer count hardcoded to 1 in main, preventing advancing 2 pictures per 30 fps frame",
+     'checked': 'v131072 main at 0x3b5c55c, confirmed in disassembly and runtime video playback'},
 ]

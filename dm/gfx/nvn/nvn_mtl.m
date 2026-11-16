@@ -9064,6 +9064,7 @@ static int arch_retire(NSString *p) {
 static int arch_compact_takes(id<MTL4Archive> a);
 static id arch_lookup(MTL4PipelineDescriptor *d, int plain, int *from_run) {
     if (from_run) *from_run = 0;
+    if (!d || [d isKindOfClass:MTL4MeshRenderPipelineDescriptor.class]) return nil;
     int compute = [d isKindOfClass:MTL4ComputePipelineDescriptor.class];
     id (^ask)(id<MTL4Archive>) = ^id(id<MTL4Archive> a) {
         atomic_fetch_add_explicit(&g_arch_asks, 1, memory_order_relaxed);
@@ -9685,7 +9686,7 @@ static dispatch_queue_t arch_harvest_q(void) {   // one capture at a time, at ut
 // d into the flush period, in the background: a compute pipeline (cps_new) or a native mesh pipeline (mtk_build), which the MTLDevice built for its first use; compact: a
 // compaction's capture of a pipeline the prewarm took from an old file (as pso_build's bases)
 static void arch_harvest(MTL4PipelineDescriptor *d, int compact) {
-    if (!d) return;
+    if (!d || [d isKindOfClass:MTL4MeshRenderPipelineDescriptor.class]) return;
     if (!arch_capturing()) { if (compact) g_compact_bad = 1; return; }
     if (compact) atomic_fetch_add(&g_compact_harvests, 1);
     dispatch_async(arch_harvest_q(), ^{ @autoreleasepool {
@@ -15557,11 +15558,19 @@ static void dlss_eval(const p_dlss *c) {
         sc.colorTexture = col; sc.depthTexture = dep; sc.motionTexture = mot; sc.outputTexture = out; sc.exposureTexture = expo; sc.reactiveMaskTexture = bias;
         sc.inputContentWidth = iw; sc.inputContentHeight = ih;
         if (@available(macOS 27.0, iOS 27.0, *)) {   // the rectangles' corners: all at the origin on the game seen, so an older system loses nothing there
-            sc.colorContentOffsetX = (NSUInteger)a.base[DLSS_COLOR][0]; sc.colorContentOffsetY = (NSUInteger)a.base[DLSS_COLOR][1];
-            sc.depthContentOffsetX = (NSUInteger)a.base[DLSS_DEPTH][0]; sc.depthContentOffsetY = (NSUInteger)a.base[DLSS_DEPTH][1];
-            sc.motionContentOffsetX = (NSUInteger)a.base[DLSS_MOTION][0]; sc.motionContentOffsetY = (NSUInteger)a.base[DLSS_MOTION][1];
-            if (bias) { sc.reactiveMaskContentOffsetX = (NSUInteger)a.base[DLSS_BIAS][0]; sc.reactiveMaskContentOffsetY = (NSUInteger)a.base[DLSS_BIAS][1]; }
-            sc.outputOffsetX = (NSUInteger)a.base[DLSS_OUTPUT][0]; sc.outputOffsetY = (NSUInteger)a.base[DLSS_OUTPUT][1];
+            SEL s1 = sel_registerName("setColorContentOffsetX:"), s2 = sel_registerName("setColorContentOffsetY:");
+            SEL s3 = sel_registerName("setDepthContentOffsetX:"), s4 = sel_registerName("setDepthContentOffsetY:");
+            SEL s5 = sel_registerName("setMotionContentOffsetX:"), s6 = sel_registerName("setMotionContentOffsetY:");
+            SEL s7 = sel_registerName("setOutputOffsetX:"), s8 = sel_registerName("setOutputOffsetY:");
+            void (*send)(id, SEL, NSUInteger) = (void (*)(id, SEL, NSUInteger))objc_msgSend;
+            send((id)sc, s1, (NSUInteger)a.base[DLSS_COLOR][0]); send((id)sc, s2, (NSUInteger)a.base[DLSS_COLOR][1]);
+            send((id)sc, s3, (NSUInteger)a.base[DLSS_DEPTH][0]); send((id)sc, s4, (NSUInteger)a.base[DLSS_DEPTH][1]);
+            send((id)sc, s5, (NSUInteger)a.base[DLSS_MOTION][0]); send((id)sc, s6, (NSUInteger)a.base[DLSS_MOTION][1]);
+            if (bias) {
+                SEL sb1 = sel_registerName("setReactiveMaskContentOffsetX:"), sb2 = sel_registerName("setReactiveMaskContentOffsetY:");
+                send((id)sc, sb1, (NSUInteger)a.base[DLSS_BIAS][0]); send((id)sc, sb2, (NSUInteger)a.base[DLSS_BIAS][1]);
+            }
+            send((id)sc, s7, (NSUInteger)a.base[DLSS_OUTPUT][0]); send((id)sc, s8, (NSUInteger)a.base[DLSS_OUTPUT][1]);
         }
         sc.motionVectorScaleX = a.mv[0]; sc.motionVectorScaleY = a.mv[1];
         sc.jitterOffsetX = a.jitter[0]; sc.jitterOffsetY = a.jitter[1];

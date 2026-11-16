@@ -1,5 +1,10 @@
 # The Legend of Zelda: Ocarina of Time (`0400486024DEC000`)
 
+# The Legend of Zelda: Ocarina of Time (`0400486024DEC000`)
+
+> [!TIP]
+> **Complete macOS Build Guide & Stability Fixes**: See [Zelda OoT macOS Guide & AI Replication Prompt](../../../docs/ZELDA_OOT_MACOS_GUIDE.md) for automated patch scripts, full technical root-cause breakdowns, and a single prompt to replicate the entire build.
+
 A Switch 2 game: update v131072, SDK 22.2.8 (`Ounce`). Nintendo EPD's engine (sead, agl, gsys, Havok, CRIWARE; project `Owl`, with Tears of the Kingdom's file layout) on NVN2. Modules `main`, `subsdk0` (NintendoSDK_movie) and `sdk`; the rewriter's patches are a frame-step stub and one cut ([`patches.py`](patches.py)). Status: plays on the Mac through the title, the opening, a new file's first scene, Link's house and Kokiri Forest, with saves, at about 59 fps with the picture close to console video. Mac only so far.
 
 ## What it needs

@@ -689,7 +689,20 @@ void front_picture_shape(int w, int h) { if (w > 0 && h > 0) g_picture_aspect = 
 - (void)fitDrawable {
     CAMetalLayer *l = (CAMetalLayer *)self.layer; if (![l isKindOfClass:CAMetalLayer.class] || !self.window) return;
     l.contentsScale = self.window.backingScaleFactor;
-    NSSize px = [self convertSizeToBacking:self.bounds.size]; if (px.width < 1 || px.height < 1 || CGSizeEqualToSize(l.drawableSize, px)) return;
+    NSSize px = [self convertSizeToBacking:self.bounds.size]; if (px.width < 1 || px.height < 1) return;
+    const char *cap = getenv("DM_DRAWABLE_CAP");
+    if (cap) {
+        double max_w = 0, max_h = 0;
+        if (!strcmp(cap, "1080p") || !strcmp(cap, "1080")) { max_w = 1920; max_h = 1080; }
+        else if (!strcmp(cap, "720p") || !strcmp(cap, "720")) { max_w = 1280; max_h = 720; }
+        else if (!strcmp(cap, "1440p") || !strcmp(cap, "1440")) { max_w = 2560; max_h = 1440; }
+        if (max_h > 0 && (px.height > max_h || px.width > max_w)) {
+            double s = fmin(max_w / px.width, max_h / px.height);
+            px.width = round(px.width * s);
+            px.height = round(px.height * s);
+        }
+    }
+    if (CGSizeEqualToSize(l.drawableSize, px)) return;
     l.drawableSize = px; LOG("front end: drawable %.0fx%.0f", px.width, px.height);
 }
 - (void)setFrameSize:(NSSize)s { [super setFrameSize:s]; [self fitDrawable]; }
