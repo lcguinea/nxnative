@@ -6,7 +6,8 @@ Complete standalone build guide, stability & performance fixes, and single-promp
 
 ## ⚡ 1. Single-Prompt AI Replication
 
-If you are using an AI agent (such as **Google Antigravity**, **Claude Code**, **Cursor**, or **ChatGPT / Codex**), simply copy and paste the prompt below. Make sure to update the path to your `.nup` container file:
+### Option A: Clean Build from Scratch
+If building from scratch using your `.nup` container, paste this prompt into your AI assistant:
 
 ```markdown
 Please build a self-contained, standalone macOS application for The Legend of Zelda: Ocarina of Time using the patched nxnative repository:
@@ -22,6 +23,26 @@ Please build a self-contained, standalone macOS application for The Legend of Ze
    - Package the standalone .app to ~/Applications with the 720p romfs_overlay and 1080p MetalFX upscaler.
    - Run: python3 scripts/patch_zelda_oot_app.py "~/Applications/The Legend of Zelda - Ocarina of Time.app"
    - Verify code signing: codesign --verify --deep --strict "~/Applications/The Legend of Zelda - Ocarina of Time.app"
+```
+
+### Option B: Fix an Already-Installed Game
+If you already built or installed the game previously (using the original unpatched guide or repository) and are experiencing crashes, shader prewarm errors, lag, or out-of-sync cutscenes, paste this prompt into your AI assistant:
+
+```markdown
+I already installed "The Legend of Zelda - Ocarina of Time.app" on macOS Apple Silicon, but it has stability, performance, and cutscene audio/video desync bugs. Please fix all bugs using the patched nxnative repository:
+
+1. Clone https://github.com/lcguinea/nxnative.git into ./nxnative (or pull latest main).
+2. Locate the existing application (e.g. "~/Applications/The Legend of Zelda - Ocarina of Time.app" or "/Applications/The Legend of Zelda - Ocarina of Time.app").
+3. Apply all fixes:
+   - Inside nxnative, build the patched dmhost binary (ninja -C dm/host/gen/0400486024DEC000 dmhost) to fix the MTL4MeshRenderPipelineDescriptor crash and add DM_DRAWABLE_CAP 1080p scaling, and update Contents/MacOS/dmhost.
+   - Run: python3 scripts/patch_zelda_oot_app.py "/path/to/The Legend of Zelda - Ocarina of Time.app"
+     This automatically:
+     - Patches main.patched.bin at 0x3b5c55c (e83b00b9 -> e93b00b9) to fix the 60 fps AV1 intro cutscene audio/dialog/video desync.
+     - Comments out line 9700 in pso_manifest.tsv (prevents Apple LLVM XPC compiler crash during shader prewarm).
+     - Installs the readable-tile shader 1e38b4a840f89d93_bf.metallib.
+     - Configures optimal settings in env.txt (DM_DRAWABLE_CAP=1080p, DM_PRESENT_LINK=0, DM_PRESENT_SNAP=1, DM_UPSCALER=metalfx).
+     - Re-signs the bundle with ad-hoc signature and verifies strictly.
+4. Launch the application and verify that the intro cutscene, dialogs, and audio play in perfect 1:1 synchronization.
 ```
 
 ---

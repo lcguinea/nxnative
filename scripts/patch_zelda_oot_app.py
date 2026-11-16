@@ -37,6 +37,23 @@ def find_app(arg_path=None):
     sys.exit(1)
 
 
+def update_dmhost(app_path):
+    dmhost_built = os.path.join(REPO_ROOT, "dm/host/gen/0400486024DEC000/dmhost")
+    if not os.path.exists(dmhost_built):
+        build_dir = os.path.join(REPO_ROOT, "dm/host/gen/0400486024DEC000")
+        if os.path.exists(os.path.join(build_dir, "build.ninja")):
+            print("[*] Compiling patched dmhost with ninja...")
+            subprocess.run(["ninja", "-C", build_dir, "dmhost"], check=False)
+
+    if os.path.exists(dmhost_built):
+        dst = os.path.join(app_path, "Contents/MacOS/dmhost")
+        shutil.copy2(dmhost_built, dst)
+        os.chmod(dst, 0o755)
+        print(f"[FIXED] Updated Contents/MacOS/dmhost with patched binary (mesh pipeline crash & 1080p cap fixes).")
+    else:
+        print("[INFO] dmhost build not found in repo; skipping dmhost binary update.")
+
+
 def patch_movie_player(dm_dir):
     bin_path = os.path.join(dm_dir, "main.patched.bin")
     if not os.path.exists(bin_path):
@@ -175,6 +192,7 @@ def main():
         print(f"[ERROR] Invalid bundle structure: {dm_dir} not found.")
         sys.exit(1)
 
+    update_dmhost(app_path)
     patch_movie_player(dm_dir)
     fix_pso_manifest(dm_dir)
     install_readable_tile_shader(app_path)
